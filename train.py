@@ -65,7 +65,7 @@ if __name__ == '__main__':
     # netG.load_state_dict(torch.load('epochs/' + opt.pretrain_path))
 
     optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(0.5, 0.9))
-    optimizerD = optim.Adam(netG.parameters(), lr=opt.lr, betas=(0.5, 0.9))
+    optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(0.5, 0.9))
     criterionG = Generator_loss().to(device)
 
     # loop over the dataset multiple times
