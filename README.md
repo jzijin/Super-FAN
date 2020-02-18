@@ -1,4 +1,4 @@
-# FSRNet Pytorch
+# Super-FAN Pytorch
 The PyTorch implement of Super-FAN.
 [Super-FAN: Integrated facial landmark localization and super-resolution of real-world low resolution faces in arbitrary poses with GANs](http://openaccess.thecvf.com/content_cvpr_2018/papers/Bulat_Super-FAN_Integrated_Facial_CVPR_2018_paper.pdf)
 Based on [SRGAN](https://github.com/leftthomas/SRGAN), I altered the code by adopting Super-FAN network structure. 
@@ -16,4 +16,16 @@ Dataset Link: https://pan.baidu.com/s/1HEECUyKI5GOSrd7NPlm-ow  密码:z2ud
 
 ## Test
 
-TODO:  Upload the pretrain model to BaiduDisk
+I haved merge the Super-FAN in to the [mmsr](https://github.com/jzijin/mmsr).I use the mmsr hierarchical to pretrain Super-FAN's Generator.the 3000 of the CelebAHQ-MASK used for train with 212000 iter.
+
+## Result
+The pretrain model result.
+The left is bicubic interpolation image, the middle is high resolution image, and the right is super resolution image(output of the Super-FAN).
+![face0](result/0.png)
+![face3](result/3.png)
+![face8](result/8.png)
+![face14](result/14.png)
+
+## TODO
+Use the pretrain model to train with GAN.
+
