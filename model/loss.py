@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50
-# from root path call and in the current path call is not the same 
+# from root path call and in the current path call is not the same
 # if want to fix it. I think sys.path is the choice
 from model.FAN import FAN
 from torch.utils.model_zoo import load_url
@@ -13,14 +13,13 @@ class Generator_loss(nn.Module):
         self.fan_loss = FAN_loss()
         self.pixel_loss = Pixel_loss()
         self.perceptual_loss = Perceptual_loss()
-    
+
     def forward(self, d_fake, data, target):
         adversarial_loss = -1 * torch.mean(d_fake)
-        fan_loss = self.fan_loss(data, target)
+        fan_loss = self.fan_loss(data, target.detach())
         pixel_loss = self.pixel_loss(data, target)
-        perceptual_loss = self.perceptual_loss(data, target)
+        perceptual_loss = self.perceptual_loss(data, target.detach())
         return pixel_loss + 0.1 * perceptual_loss + 0.005 * fan_loss + 0.01 * adversarial_loss
-        
 
 
 class FAN_loss(nn.Module):
@@ -34,7 +33,7 @@ class FAN_loss(nn.Module):
             p.requires_grad = False
         self.FAN_net = FAN_net
         self.criterion = nn.MSELoss()
-    
+
     def forward(self, data, target):
         # data = self.FAN_net(data)
         # target = self.FAN_net(target)
@@ -47,7 +46,7 @@ class Pixel_loss(nn.Module):
     def __init__(self):
         super(Pixel_loss, self).__init__()
         self.criterion = nn.MSELoss()
-    
+
     def forward(self, data, target):
         return self.criterion(data, target)
 

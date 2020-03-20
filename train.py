@@ -55,6 +55,8 @@ if __name__ == '__main__':
 
     train_set = TrainDatasetFromFolder('../../../CelebA-HQ-img/', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     val_set = ValDatasetFromFolder('../../../CelebA-HQ-img/', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    # train_set = TrainDatasetFromFolder('../../../CelebA-HQ-img/', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    # val_set = ValDatasetFromFolder('../../../CelebA-HQ-img/', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
     train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=opt.batchSize, shuffle=True)
     val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=opt.testBatchSize, shuffle=False)
 
@@ -63,6 +65,7 @@ if __name__ == '__main__':
 
     # pretrain the Generator and load it
     # netG.load_state_dict(torch.load('epochs/' + opt.pretrain_path))
+    netG.load_state_dict(torch.load("./300000_G.pth"))
 
     optimizerG = optim.Adam(netG.parameters(), lr=opt.lr, betas=(0.5, 0.9))
     optimizerD = optim.Adam(netD.parameters(), lr=opt.lr, betas=(0.5, 0.9))
@@ -76,11 +79,14 @@ if __name__ == '__main__':
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
 
+            fake_image = netG(inputs)
+
+            for p in netD.parameters():
+                p.requires_grad = True
 
             ## update D network
             optimizerD.zero_grad()
-            fake_image = netG(inputs)
-            D_fake = netD(fake_image)
+            D_fake = netD(fake_image.detach())
             D_real = netD(labels)
 
             d_fake_loss = torch.mean(D_fake)
@@ -88,23 +94,27 @@ if __name__ == '__main__':
             gradient_penalty = calculate_gradient_penalty(labels.size(0), netD, labels, fake_image)
 
             d_loss = d_fake_loss - d_real_loss + gradient_penalty
-            d_total_loss += d_loss
+            d_total_loss += d_loss.item()
             d_loss.backward()
             optimizerD.step()
+
+
+            for p in netD.parameters():
+                p.requires_grad = False
 
             ## update G
             # zero the parameter gradients
             optimizerG.zero_grad()
             # forward + backward + optimize
-            outputs = netG(inputs)
-            D_fake = netD(outputs)
-            g_loss = criterionG(D_fake, outputs, labels)
-            g_total_loss += g_loss
+            # outputs = netG(inputs)
+            D_fake = netD(fake_image)
+            g_loss = criterionG(D_fake, fake_image, labels)
+            g_total_loss += g_loss.item()
 
             g_loss.backward()
             optimizerG.step()
 
-            print("===> Epoch[{}]({}/{}): gp: {:.4f}|D_real: {:.4f}|D_fake: {:.4f}|D_loss :{:.4f}|G_loss: {:.4f}".format(epoch, i, len(train_loader), gradient_penalty, d_real_loss.item(), d_fake_loss.item(), d_loss.item(), g_loss.item()))
+            print("===> Epoch[{}]({}/{}): gp: {:.4f}|D_real: {:.4f}|D_fake: {:.4f}|D_loss :{:.4f}|G_loss: {:.4f}".format(epoch, i, len(train_loader), gradient_penalty, d_real_loss, d_fake_loss, d_loss, g_loss))
         print("===> Epoch {} Complete: Avg. D_loss: {:.4f} G_loss: {: 4f}".format(epoch, d_total_loss / len(train_loader), g_total_loss / len(train_loader)))
         torch.save(netG.state_dict(), 'epochs/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
         torch.save(netG.state_dict(), 'epochs/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
@@ -137,6 +147,7 @@ if __name__ == '__main__':
                 image = utils.make_grid(image, nrow=3, padding=5)
                 utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
                 index += 1
+        print("===> Avg. PSNR: {:.4f} dB".format(avg_psnr / len(val_loader)))
 
 
 
